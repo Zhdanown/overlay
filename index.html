@@ -23,13 +23,12 @@
 
       var map
 
-      var floor1;
-      var floor2;
-      var floor3;
+      var floors = Array(3);
 
       var loc_center = new google.maps.LatLng(51.756866, 36.134386);
       var k_diff = 0.0011;
       var D_diff = 0.0016;
+      var rot = 30;
 
       FloorOverlay.prototype = new google.maps.OverlayView();
 
@@ -51,17 +50,14 @@
 
         var bounds = getBounds(loc_center);
 
-        // The photograph is courtesy of the U.S. Geological Survey.
-        // var srcImage = 'http://placehold.it/300x200';
-        var srcImage = 'blueprints/floor_1.jpg';
+
 
         // The custom USGSOverlay object contains the USGS image,
         // the bounds of the image, and a reference to the map.
-        floor1 = new FloorOverlay(bounds, 'blueprints/floor_1.jpg', map, 'one');
-        floor2 = new FloorOverlay(bounds, 'blueprints/floor_2.jpg', map, 'two');
-        floor3 = new FloorOverlay(bounds, 'blueprints/floor_3.jpg', map, 'three');
-        floor2.setMap(null);
-        floor3.setMap(null);
+        for (var i = 0; i < floors.length; i++) {
+          floors[i] = new FloorOverlay(bounds, 'blueprints/floor_' + (i+1) + '.jpg', null, i + 1);
+        }
+          floors[0].map = map;
 
         // var center_marker = new google.maps.Marker({
         //     position: loc_center,
@@ -77,9 +73,19 @@
         google.maps.event.addListener(map, 'click', function (event) {
           var marker = new google.maps.Marker({
             position: event.latLng,
-            map: map,
+            map: null,
+            floor: 1
           });
+          // Bind marker map to current active floor
+          for (var i = 0; i < floors.length; i++) {
+            if (floors[i].map !== null)
+              marker.bindTo('map', floors[i], 'map')
+          }
         });
+
+        google.maps.event.addListener(map, 'click', function (event) {
+          this.get('map')
+        })
 
       }
 
@@ -96,7 +102,7 @@
         // method so we'll leave it null for now.
         this.div_ = null;
 
-        // Explicitly call setMap on this overlay.
+        // Explicitly call Map on this overlay.
         this.setMap(map);
 
       }
@@ -119,8 +125,30 @@
         img.style.height = '100%';
         img.style.opacity = '0.5';
         img.style.position = 'absolute';
+        img.style.transform = 'rotate(0deg)';
         div.appendChild(img);
 
+        // Create controls
+        var ctrlLeft = document.createElement('div');
+        ctrlLeft.className = 'ctrlLeft';
+        ctrlLeft.style.background = 'blue';
+        ctrlLeft.style.width = '10%';
+        ctrlLeft.style.height = '100%';
+        ctrlLeft.style.opacity = '0.5';
+        ctrlLeft.style.position = 'absolute';
+        div.appendChild(ctrlLeft);
+
+        var ctrlRight = document.createElement('div');
+        ctrlRight.className = 'ctrlRight';
+        ctrlRight.style.background = 'green';
+        ctrlRight.style.width = '10%';
+        ctrlRight.style.height = '100%';
+        ctrlRight.style.opacity = '0.5';
+        ctrlRight.style.position = 'absolute';
+        ctrlRight.style.right = '0';
+        div.appendChild(ctrlRight);
+
+        this.img_ = img;
         this.div_ = div;
 
         // Add the element to the "overlayLayer" pane.
@@ -133,7 +161,40 @@
         //   google.maps.event.trigger(that, 'mouseup');
         // })
 
-        google.maps.event.addDomListener(div, 'mousedown', function() {
+        google.maps.event.addDomListener(div.getElementsByClassName('ctrlLeft')[0], 'mousedown', function(e) {
+          // google.maps.event.removeListener(that.moveDiv);
+
+            that.map.set('draggable', false);
+
+            that.stretchLeft = google.maps.event.addDomListener(map, 'mousemove', function  Stretch(event) {
+              var center = (that.bounds_.getCenter());
+              var ne = (that.bounds_.getNorthEast());
+
+              var neNew = new google.maps.LatLng(ne.lat(), ne.lng());
+              D_diff = Math.abs(center.lng() - event.latLng.lng());
+
+              var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
+              var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+              var newBounds = new google.maps.LatLngBounds(swBound, neBound);
+
+              that.bounds_ = newBounds;
+              that.draw();
+            });
+
+            // google.maps.event.addDomListener(map, 'mouseup', function () {
+            //   google.maps.event.removeListener(that.stretchLeft);
+            // })
+        });
+
+        google.maps.event.addDomListener(map, 'mouseup', function() {
+          console.log('mouse up');
+          that.map.set('draggable', true);
+          google.maps.event.removeListener(that.stretchLeft);
+        })
+
+////////////////////////////////////////////////////////
+
+        function drag(that) {
           that.map.set('draggable', false);
 
           var offsetDefined = false;
@@ -159,13 +220,21 @@
             that.bounds_ = newBounds;
             that.draw();
           })
+        }
+
+        this.drag = google.maps.event.addDomListener(div, 'mousedown', function() {
+          if (event.target !== that.img_)
+            return;
+
+            drag(that)
+
 
         })
 
-        google.maps.event.addDomListener(div, 'mouseup', function() {
+        google.maps.event.addDomListener(map, 'mouseup', function() {
           that.map.set('draggable', true);
           google.maps.event.removeListener(that.moveDiv);
-          console.log('map');
+          google.maps.event.removeListener(that.stretchLeft);
         })
 
       };
@@ -189,6 +258,7 @@
         div.style.top = ne.y + 'px';
         div.style.width = (ne.x - sw.x) + 'px';
         div.style.height = (sw.y - ne.y) + 'px';
+        div.style.transform = 'rotate(' + rot + 'deg)';
         // if (!this.visible_)
           // this.div_.style.visibility = 'hidden';
       };
@@ -222,44 +292,20 @@
       };
 
       google.maps.event.addDomListener(window, 'load', initMap);
-
-      var floor_1 = document.getElementById('floor_1');
-      var floor_2 = document.getElementById('floor_2');
-      var floor_3 = document.getElementById('floor_3');
-      // floor_1.onclick = function () {
-      //   console.log('sdfsfsdsdf');
-      // };
-      function setFloor1 () {
-         // floor1.show();
-         // floor2.hide();
-         // floor3.hide();
-         floor1.setMap(map);
-         floor2.setMap(null);
-         floor3.setMap(null);
-      }
-      function setFloor2 () {
-        // floor1.hide();
-        // floor2.show();
-        // floor3.hide();
-        floor1.setMap(null);
-        floor2.setMap(map);
-        floor3.setMap(null);
-      }
-      function setFloor3 () {
-        // floor1.hide();
-        // floor2.hide();
-        // floor3.show();
-        floor1.setMap(null);
-        floor2.setMap(null);
-        floor3.setMap(map);
+//------------------------------------------------------------------------
+      function setFloor(floor) {
+        for (var i = 0; i < floors.length; i++) {
+          floors[i].setMap(null);
+        }
+        floors[floor - 1].setMap(map);
       }
 
     </script>
   </head>
   <body>
     <div id="map"></div>
-    <button id="floor_1" onclick="setFloor1()" type="button" name="button">1 этаж</button>
-    <button id="floor_2" onclick="setFloor2()" type="button" name="button">2 этаж</button>
-    <button id="floor_3" onclick="setFloor3()" type="button" name="button">3 этаж</button>
+    <button id="floor_1" onclick="setFloor(1)" type="button" name="button">1 этаж</button>
+    <button id="floor_2" onclick="setFloor(2)" type="button" name="button">2 этаж</button>
+    <button id="floor_3" onclick="setFloor(3)" type="button" name="button">3 этаж</button>
   </body>
 </html>
