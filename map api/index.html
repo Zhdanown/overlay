@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Map</title>
+  <style media="screen">
+    #map {
+      height: 600px;
+      width: 100%;
+    }
+
+  </style>
+</head>
+<body>
+
+
+<div id="map">
+
+</div>
+
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdfZ6DMsU8znPMO7AwzOR8bMikVHobr9Y&callback=initMap">
+</script>
+
+<script type="text/javascript">
+
+
+  function initMap() {
+
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom:18,
+      center:{lat:51.757139,lng:36.135332},
+      // mapTypeId: google.maps.MapTypeId.TERRAIN,
+    });
+
+
+    var ATCoords = [
+      {lat: 51.756887, lng: 36.134148},
+      {lat: 51.757032, lng: 36.134710},
+      {lat: 51.756826, lng: 36.134860},
+      {lat: 51.756667, lng: 36.134291},
+      {lat: 51.756887, lng: 36.134148}
+    ];
+
+    var atPolygon = new google.maps.Polygon({
+      paths: ATCoords,
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#FF0000',
+      fillOpacity: 0.35,
+    });
+
+    atPolygon.setMap(map);
+
+    document.onclick = function() {
+      rotatePolygon(atPolygon, 90);
+    }
+
+  }
+
+  var rotationPoint = {lat:51.756852, lng: 36.134516};
+
+  function rotatePolygon(polygon,angle) {
+      var map = polygon.getMap();
+      var prj = map.getProjection();
+      var origin = prj.fromLatLngToPoint(polygon.getPath().getAt(0)); //rotate around first point
+      // console.log(polygon.getPath().getAt(0));
+      console.log(rotationPoint);
+      // var origin = prj.fromLatLngToPoint(rotationPoint);
+      console.log(origin);
+
+      var coords = polygon.getPath().getArray().map(function(latLng){
+         var point = prj.fromLatLngToPoint(latLng);
+         var rotatedLatLng =  prj.fromPointToLatLng(rotatePoint(point,origin,angle));
+         return {lat: rotatedLatLng.lat(), lng: rotatedLatLng.lng()};
+      });
+      polygon.setPath(coords);
+  }
+
+  function rotatePoint(point, origin, angle) {
+      var angleRad = angle * Math.PI / 180.0;
+      return {
+          x: Math.cos(angleRad) * (point.x - origin.x) - Math.sin(angleRad) * (point.y - origin.y) + origin.x,
+          y: Math.sin(angleRad) * (point.x - origin.x) + Math.cos(angleRad) * (point.y - origin.y) + origin.y
+      };
+  }
+
+
+</script>
+
+
+</body>
+</html>
