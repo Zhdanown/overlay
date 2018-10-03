@@ -119,7 +119,8 @@
 		      		k_rotation_diff = rotation_marker.getPosition().lat() - center_marker.getPosition().lat();
 		      		D_rotation_diff = rotation_marker.getPosition().lng() - center_marker.getPosition().lng();
 					rot = Math.atan2(D_rotation_diff, k_rotation_diff) * 180 / Math.PI;
-          console.log(rot);
+          // console.log(rot);
+          console.log(loc_center.lat(), loc_center.lng());
 					overlay.updateRotation();
 		      	});
 		    }
