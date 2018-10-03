@@ -141,21 +141,25 @@
         // Create controls
         var ctrlLeft = document.createElement('div');
         ctrlLeft.className = 'ctrlLeft';
-        ctrlLeft.style.background = 'blue';
-        ctrlLeft.style.width = '10%';
-        ctrlLeft.style.height = '100%';
-        ctrlLeft.style.opacity = '0.5';
+        ctrlLeft.style.background = 'black';
+        ctrlLeft.style.width = '5%';
+        ctrlLeft.style.height = '30%';
+        ctrlLeft.style.opacity = '0';
         ctrlLeft.style.position = 'absolute';
+        ctrlLeft.style.top = '50%';
+        ctrlLeft.style.transform = 'translateY(-50%)';
         div.appendChild(ctrlLeft);
 
         var ctrlTop = document.createElement('div');
         ctrlTop.className = 'ctrlTop';
-        ctrlTop.style.background = 'green';
-        ctrlTop.style.width = '100%';
-        ctrlTop.style.height = '10%';
-        ctrlTop.style.opacity = '0.5';
+        ctrlTop.style.background = 'black';
+        ctrlTop.style.width = '30%';
+        ctrlTop.style.height = '5%';
+        ctrlTop.style.opacity = '0';
         ctrlTop.style.position = 'absolute';
         ctrlTop.style.top = '0';
+        ctrlTop.style.left = '50%';
+        ctrlTop.style.transform = 'translateX(-50%)';
         div.appendChild(ctrlTop);
 
         this.img_ = img;
@@ -166,124 +170,115 @@
         panes.overlayMouseTarget.appendChild(div);
         var that = this;
         this.dragging = false;
+        // change cursor
+          google.maps.event.addDomListener(div, 'mouseover', function (event) {
+            div.style.cursor = 'move';
+          })
 
-        google.maps.event.addDomListener(div.getElementsByClassName('ctrlTop')[0], 'mousedown', function(e) {
+          google.maps.event.addDomListener(div.getElementsByClassName('ctrlTop')[0], 'mouseover', function (event) {
+            div.getElementsByClassName('ctrlTop')[0].style.cursor = 'ns-resize';
+            div.getElementsByClassName('ctrlTop')[0].style.opacity = '0.3';
+          })
+          google.maps.event.addDomListener(div.getElementsByClassName('ctrlTop')[0], 'mouseout', function (event) {
+            div.getElementsByClassName('ctrlTop')[0].style.opacity = '0';
+          })
+
+          google.maps.event.addDomListener(div.getElementsByClassName('ctrlLeft')[0], 'mouseover', function (event) {
+            div.getElementsByClassName('ctrlLeft')[0].style.cursor = 'ew-resize';
+            div.getElementsByClassName('ctrlLeft')[0].style.opacity = '0.3';
+          })
+          google.maps.event.addDomListener(div.getElementsByClassName('ctrlLeft')[0], 'mouseout', function (event) {
+          div.getElementsByClassName('ctrlLeft')[0].style.opacity = '0';
+          })
+        //---------------------------------
+
+        google.maps.event.addDomListener(div, 'mousedown', function (event) {
           that.map.set('draggable', false);
-          var offsetDefined = false; // to call once for getting offset position
-          var mouseRotMarkerOffset;
-          var rotationMarkerPos;
-
-          that.stretchTop = google.maps.event.addDomListener(map, 'mousemove', function  Stretch(event) {
-            var center = (that.bounds_.getCenter());
-            var ne = (that.bounds_.getNorthEast());
-
-            var neNew = new google.maps.LatLng(ne.lat(), ne.lng());
-            k_diff = Math.abs(center.lat() - event.latLng.lat());
-
-            var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
-            var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
-            var newBounds = new google.maps.LatLngBounds(swBound, neBound);
-
-            that.bounds_ = newBounds;
-            that.draw();
-
-            // update rotation marker position
-            var mouseLatLng = event.latLng;
-            if (!offsetDefined) {
-              offsetDefined = true;
-              rotationMarkerPos = rotation_marker.position;
-              mouseRotMarkerOffset = new google.maps.LatLng(mouseLatLng.lat() - rotationMarkerPos.lat(),
-                                                            mouseLatLng.lng() - rotationMarkerPos.lng());
-            }
-            rotation_marker.setPosition(new google.maps.LatLng(mouseLatLng.lat() - mouseRotMarkerOffset.lat(),
-                                                            rotationMarkerPos.lng() ));
-
-          });
-
-        });
-
-        google.maps.event.addDomListener(div.getElementsByClassName('ctrlLeft')[0], 'mousedown', function(e) {
-            that.map.set('draggable', false);
-
-            that.stretchLeft = google.maps.event.addDomListener(map, 'mousemove', function  Stretch(event) {
-              var center = (that.bounds_.getCenter());
-              var ne = (that.bounds_.getNorthEast());
-              D_diff = Math.abs(center.lng() - event.latLng.lng());
-
-              var g = D_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
-
-              var neNew = new google.maps.LatLng(ne.lat(), ne.lng());
-
-              // var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - g);
-              // var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + g);
-              var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
-              var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
-              var newBounds = new google.maps.LatLngBounds(swBound, neBound);
-
-              that.bounds_ = newBounds;
-              that.draw();
-            });
-
-        });
-
-        google.maps.event.addDomListener(map, 'mouseup', function() {
-          console.log('mouse up');
-          that.map.set('draggable', true);
-          google.maps.event.removeListener(that.stretchLeft);
-          google.maps.event.removeListener(that.stretchTop);
-        })
-
-////////////////////////////////////////////////////////
-
-        function drag(that) {
-          that.map.set('draggable', false);
-
+          //
           var offsetDefined = false;
           var mouseCenterOffset;
           var mouseRotMarkerOffset;
+          var rotationMarkerPos;
+          var center = (that.bounds_.getCenter());
+          var ne = (that.bounds_.getNorthEast());
+          var neNew = new google.maps.LatLng(ne.lat(), ne.lng());
+          //
+          var ctrlTop = div.getElementsByClassName('ctrlTop')[0];
+          var ctrlLeft = div.getElementsByClassName('ctrlLeft')[0];
+          var target = event.target;
 
-          that.moveDiv = google.maps.event.addDomListener(map, 'mousemove', function(event) {
-            var mouseLatLng = event.latLng;
+          if (target === ctrlTop)
+            that.stretchTop = google.maps.event.addListener(map, 'mousemove', function (event) {
+              // ctrlTop.style.background = 'red';
+                k_diff = Math.abs(center.lat() - event.latLng.lat());
 
-            if (!offsetDefined) {
-              offsetDefined = true;
+                var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
+                var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+                var newBounds = new google.maps.LatLngBounds(swBound, neBound);
 
-              var rotationMarkerPos = rotation_marker.position;
-              mouseRotMarkerOffset = new google.maps.LatLng(mouseLatLng.lat() - rotationMarkerPos.lat(),
-                                                            mouseLatLng.lng() - rotationMarkerPos.lng());
+                that.bounds_ = newBounds;
+                that.draw();
 
-              var currentCenter = that.bounds_.getCenter();
-              mouseCenterOffset = new google.maps.LatLng(mouseLatLng.lat() - currentCenter.lat(),
-                                                          mouseLatLng.lng() - currentCenter.lng());
-            }
-            // update rotation marker position
-            rotation_marker.setPosition(new google.maps.LatLng(mouseLatLng.lat() - mouseRotMarkerOffset.lat(),
-                                                              mouseLatLng.lng() - mouseRotMarkerOffset.lng() ));
+                // update rotation marker position
+                if (!offsetDefined) {
+                  offsetDefined = true;
+                  rotationMarkerPos = rotation_marker.position;
+                  mouseRotMarkerOffset = new google.maps.LatLng(event.latLng.lat() - rotationMarkerPos.lat(),
+                                                                event.latLng.lng() - rotationMarkerPos.lng());
+                }
+                rotation_marker.setPosition(new google.maps.LatLng(event.latLng.lat() - mouseRotMarkerOffset.lat(),
+                                                                rotationMarkerPos.lng() ));
+            })
+          else if (target === ctrlLeft)
+            that.stretchLeft = google.maps.event.addListener(map, 'mousemove', function (event) {
+                D_diff = Math.abs(center.lng() - event.latLng.lng());
+                var g = D_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
 
-            var adjustedMousePosition = new google.maps.LatLng(mouseLatLng.lat() - mouseCenterOffset.lat(),
-                                                              mouseLatLng.lng() - mouseCenterOffset.lng());
+                // var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - g);
+                // var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + g);
+                var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
+                var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+                var newBounds = new google.maps.LatLngBounds(swBound, neBound);
+                that.bounds_ = newBounds;
+                that.draw();
+            })
+          else
+            that.move = google.maps.event.addListener(map, 'mousemove', function (event) {
 
-            var swBound = new google.maps.LatLng(adjustedMousePosition.lat() - k_diff, adjustedMousePosition.lng() - D_diff);
-            var neBound = new google.maps.LatLng(adjustedMousePosition.lat() + k_diff, adjustedMousePosition.lng() + D_diff);
-            var newBounds = new google.maps.LatLngBounds(swBound, neBound);
-            // updateBounds
-            that.bounds_ = newBounds;
-            that.draw();
-          });
-        }
+                if (!offsetDefined) {
+                  offsetDefined = true;
+                  var rotationMarkerPos = rotation_marker.position;
+                  mouseRotMarkerOffset = new google.maps.LatLng(event.latLng.lat() - rotationMarkerPos.lat(),
+                                                                event.latLng.lng() - rotationMarkerPos.lng() );
+                  var currentCenter = that.bounds_.getCenter();
+                  mouseCenterOffset = new google.maps.LatLng(event.latLng.lat() - currentCenter.lat(),
+                                                             event.latLng.lng() - currentCenter.lng() );
+                }
+                  // update rotation marker position
+                  rotation_marker.setPosition(new google.maps.LatLng(event.latLng.lat() - mouseRotMarkerOffset.lat(),
+                                                                    event.latLng.lng() - mouseRotMarkerOffset.lng() ));
+                  var adjustedMousePosition = new google.maps.LatLng(event.latLng.lat() - mouseCenterOffset.lat(),
+                                                                    event.latLng.lng() - mouseCenterOffset.lng() );
+                  var swBound = new google.maps.LatLng(adjustedMousePosition.lat() - k_diff, adjustedMousePosition.lng() - D_diff );
+                  var neBound = new google.maps.LatLng(adjustedMousePosition.lat() + k_diff, adjustedMousePosition.lng() + D_diff );
+                  var newBounds = new google.maps.LatLngBounds(swBound, neBound);
+                  // updateBounds
+                  that.bounds_ = newBounds;
+                  that.draw();
+            })
 
-        this.drag = google.maps.event.addDomListener(div, 'mousedown', function() {
-          if (event.target !== that.img_)
-            return;
-
-            drag(that);
         });
 
-        google.maps.event.addDomListener(map, 'mouseup', function() {
+        google.maps.event.addListener(map, 'mouseup', function (event) {
           that.map.set('draggable', true);
-          google.maps.event.removeListener(that.moveDiv);
+          google.maps.event.removeListener(that.stretchTop);
           google.maps.event.removeListener(that.stretchLeft);
-        });
+          google.maps.event.removeListener(that.move);
+        })
+
+        google.maps.event.addDomListener(div, 'mouseup', function (event) {
+          google.maps.event.trigger(map, 'mouseup');
+        })
 
       };
 
