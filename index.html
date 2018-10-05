@@ -19,6 +19,7 @@
       }
     </style>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdfZ6DMsU8znPMO7AwzOR8bMikVHobr9Y"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?libraries=geometry&sensor=true_or_false"></script>
     <script>
 
       var map;
@@ -162,6 +163,42 @@
         ctrlTop.style.transform = 'translateX(-50%)';
         div.appendChild(ctrlTop);
 
+        var ctrlRight = document.createElement('div');
+        ctrlRight.className = 'ctrlRight';
+        ctrlRight.style.background = 'black';
+        ctrlRight.style.width = '5%';
+        ctrlRight.style.height = '30%';
+        ctrlRight.style.opacity = '0.5';
+        ctrlRight.style.position = 'absolute';
+        ctrlRight.style.right = '0';
+        ctrlRight.style.top = '50%';
+        ctrlRight.style.transform = 'translateY(-50%)';
+        div.appendChild(ctrlRight);
+
+        var ctrlBottom = document.createElement('div');
+        ctrlBottom.className = 'ctrlBottom';
+        ctrlBottom.style.background = 'black';
+        ctrlBottom.style.width = '30%';
+        ctrlBottom.style.height = '5%';
+        ctrlBottom.style.opacity = '0.5';
+        ctrlBottom.style.position = 'absolute';
+        ctrlBottom.style.bottom = '0';
+        ctrlBottom.style.left = '50%';
+        ctrlBottom.style.transform = 'translateX(-50%)';
+        div.appendChild(ctrlBottom);
+
+        var ctrlSW = document.createElement('div');
+        ctrlSW.className = 'ctrlSW';
+        ctrlSW.style.background = 'black';
+        ctrlSW.style.width = '10%';
+        ctrlSW.style.height = '10%';
+        ctrlSW.style.opacity = '0.5';
+        ctrlSW.style.position = 'absolute';
+        ctrlSW.style.bottom = '0';
+
+        div.appendChild(ctrlSW);
+
+
         this.img_ = img;
         this.div_ = div;
 
@@ -194,27 +231,33 @@
 
         google.maps.event.addDomListener(div, 'mousedown', function (event) {
           that.map.set('draggable', false);
+
           //
           var offsetDefined = false;
+          var mouseInitPos;
           var mouseCenterOffset;
           var mouseRotMarkerOffset;
           var rotationMarkerPos;
           var center = (that.bounds_.getCenter());
-          var ne = (that.bounds_.getNorthEast());
-          var neNew = new google.maps.LatLng(ne.lat(), ne.lng());
+
           //
           var ctrlTop = div.getElementsByClassName('ctrlTop')[0];
           var ctrlLeft = div.getElementsByClassName('ctrlLeft')[0];
+          var ctrlBottom = div.getElementsByClassName('ctrlBottom')[0];
+          var ctrlRight = div.getElementsByClassName('ctrlRight')[0];
+          var ctrlSW = div.getElementsByClassName('ctrlSW')[0];
           var target = event.target;
+          var fixed =  D_diff;
+
 
           if (target === ctrlTop)
             that.stretchTop = google.maps.event.addListener(map, 'mousemove', function (event) {
-              // ctrlTop.style.background = 'red';
                 k_diff = Math.abs(center.lat() - event.latLng.lat());
+                var sw = that.bounds_.getSouthWest();
 
-                var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
+                // var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
                 var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
-                var newBounds = new google.maps.LatLngBounds(swBound, neBound);
+                var newBounds = new google.maps.LatLngBounds(sw, neBound);
 
                 that.bounds_ = newBounds;
                 that.draw();
@@ -229,18 +272,86 @@
                 rotation_marker.setPosition(new google.maps.LatLng(event.latLng.lat() - mouseRotMarkerOffset.lat(),
                                                                 rotationMarkerPos.lng() ));
             })
+
           else if (target === ctrlLeft)
             that.stretchLeft = google.maps.event.addListener(map, 'mousemove', function (event) {
-                D_diff = Math.abs(center.lng() - event.latLng.lng());
-                var g = D_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
+                // var lat = k_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
+                // var lng = D_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
+                //
+                // var appendix = D_diff * Math.tan(rot * Math.PI / 180);
 
-                // var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - g);
-                // var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + g);
-                var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
-                var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
-                var newBounds = new google.maps.LatLngBounds(swBound, neBound);
+                var ne = that.bounds_.getNorthEast();
+                var sw = that.bounds_.getSouthWest();
+
+                var mousePos = event.latLng;
+                var mouseOffset = new google.maps.LatLng(mousePos.lat() - sw.lat(), mousePos.lng() - sw.lng());
+
+
+
+                var swBound = new google.maps.LatLng(center.lat() + lat, center.lng() + lng );
+                // var neBound = new google.maps.LatLng(ne.lat(), ne.lng());
+                // var swBound = new google.maps.LatLng(center.lat() - k_diff, event.latLng.lng());
+                // var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+
+                var newBounds = new google.maps.LatLngBounds(swBound, ne);
+
                 that.bounds_ = newBounds;
                 that.draw();
+            })
+
+          else if (target === ctrlBottom)
+              that.stretchBottom = google.maps.event.addListener(map, 'mousemove', function (event) {
+                var k_diff = Math.abs(center.lat() - event.latLng.lat());
+                var ne = that.bounds_.getNorthEast();
+
+                var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
+                // var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+                var newBounds = new google.maps.LatLngBounds(swBound, ne);
+
+                that.bounds_ = newBounds;
+                that.draw();
+              })
+          else if (target === ctrlRight)
+            that.stretchRight = google.maps.event.addListener(map, 'mousemove', function (event) {
+              var D_diff = Math.abs(center.lng() - event.latLng.lng());
+              var sw = that.bounds_.getSouthWest();
+
+              // var swBound = new google.maps.LatLng(center.lat() - k_diff, center.lng() - D_diff);
+              var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+
+              var newBounds = new google.maps.LatLngBounds(sw, neBound);
+
+              that.bounds_ = newBounds;
+              that.draw();
+            })
+          else if (target === ctrlSW)
+            that.stretchSW = google.maps.event.addListener(map, 'mousemove', function (event) {
+              if (!offsetDefined) {
+                offsetDefined = true
+                mouseInitPos = event.latLng;
+              }
+
+              var w = k_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
+              var h = D_diff / ( Math.sqrt( 1 / ( Math.pow( Math.tan(rot * Math.PI / 180), 2 ) + 1) ) );
+
+              // var mouseDiff = new google.maps.LatLng(mouseInitPos.lat() - event.latLng.lat(),
+              //                                       mouseInitPos.lng() - event.latLng.lng());
+              // console.log(mouseDiff.lat(), mouseDiff.lng());
+              // var sw = that.bounds_.getSouthWest();
+              // var ne = that.bounds_.getNorthEast();
+
+
+              // var D_diff = Math.abs(center.lng() - event.latLng.lng());
+              var swBound = new google.maps.LatLng( center.lat()  + w, center.lng() + h );
+              var neBound = new google.maps.LatLng(center.lat() + k_diff, center.lng() + D_diff);
+
+              var newBounds = new google.maps.LatLngBounds(swBound, neBound);
+
+              that.bounds_ = newBounds;
+              that.draw();
+
+
+
             })
           else
             that.move = google.maps.event.addListener(map, 'mousemove', function (event) {
@@ -273,6 +384,9 @@
           that.map.set('draggable', true);
           google.maps.event.removeListener(that.stretchTop);
           google.maps.event.removeListener(that.stretchLeft);
+          google.maps.event.removeListener(that.stretchBottom);
+          google.maps.event.removeListener(that.stretchRight);
+          google.maps.event.removeListener(that.stretchSW);
           google.maps.event.removeListener(that.move);
         })
 
